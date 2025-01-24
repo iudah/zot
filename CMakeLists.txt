@@ -33,5 +33,5 @@ add_library(${TARGET} SHARED)
 target_sources(${TARGET} PRIVATE ${SOURCE_FILES})
 
 # Install targets
-install(TARGETS ${TARGET} DESTINATION bin)
+install(TARGETS ${TARGET} DESTINATION lib)
 install(FILES ${HEADER_FILES} DESTINATION include)

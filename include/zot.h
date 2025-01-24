@@ -29,6 +29,8 @@ void *zrealloc(void *mptr, zsize size);
 void zfree(void *ptr);
 
 #define LOG(fmt, ...) fprintf(stderr, "[LOG]: " fmt "\n", ##__VA_ARGS__)
+#define LOG_ERROR(msg, ...)                                                    \
+  fprintf(stderr, "[ERROR]: %s: " msg "\n", __FUNCTION__, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }
