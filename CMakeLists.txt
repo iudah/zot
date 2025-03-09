@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(Zot VERSION 1.0 DESCRIPTION "zot memory manager")
+project(Zot VERSION 2.1 DESCRIPTION "zot memory manager")
 
 set(TARGET zot)
 
@@ -18,6 +18,15 @@ set(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE} -O3")
 set(HEADER_FILES include/zot.h)
 set(SOURCE_FILES src/zot.c)
 
+include(ExternalProject)
+
+ExternalProject_Add(
+  MemAlloc
+  SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/memalloc -BUILD_EXE=OFF
+  BUILD_ALWAYS TRUE
+  BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/memalloc/lib/libmemalloc.a
+)
 
 # Create INTERFACE target for shared flags
 add_library(zot_c_flags INTERFACE)
@@ -31,6 +40,10 @@ target_compile_options(
 # Main library setup
 add_library(${TARGET} SHARED)
 target_sources(${TARGET} PRIVATE ${SOURCE_FILES})
+target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/memalloc/include)
+target_link_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/lib/)
+target_link_libraries(${TARGET} PRIVATE memalloc)
+add_dependencies(${TARGET} MemAlloc)
 
 # Install targets
 install(TARGETS ${TARGET} DESTINATION lib)

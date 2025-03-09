@@ -2,6 +2,8 @@
 #define ZOT_H
 
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +22,8 @@ typedef uint64_t zsize;
  */
 void *zcalloc(const zsize n, const zsize size);
 
+void *zmalloc(zsize size);
+
 void *zrealloc(void *mptr, zsize size);
 
 /**
@@ -30,7 +34,8 @@ void zfree(void *ptr);
 
 #define LOG(fmt, ...) fprintf(stderr, "[LOG]: " fmt "\n", ##__VA_ARGS__)
 #define LOG_ERROR(msg, ...)                                                    \
-  fprintf(stderr, "[ERROR]: %s: " msg "\n", __FUNCTION__, ##__VA_ARGS__)
+  fprintf(stderr, "[ERROR]: %s: " msg "\n", __FUNCTION__, ##__VA_ARGS__);      \
+  abort();
 
 #ifdef __cplusplus
 }
