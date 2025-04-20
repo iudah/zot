@@ -20,17 +20,22 @@ typedef uint64_t zsize;
  * @param size Size of each object.
  * @return Pointer to the allocated memory.
  */
-void *zcalloc(const zsize n, const zsize size);
+void *_Nullable zcalloc(const zsize n, const zsize size);
 
-void *zmalloc(zsize size);
+void *_Nullable zmalloc(zsize size);
 
-void *zrealloc(void *mptr, zsize size);
+void *_Nullable zrealloc(void *_Nonnull mptr, zsize size);
 
 /**
  * Frees allocated memory.
  * @param ptr Pointer to the memory to be freed.
  */
-void zfree(void *ptr);
+void zfree(void *_Nonnull ptr);
+
+int zthread_create(pthread_t *_Nonnull thread_ptr,
+                   pthread_attr_t const *_Nullable thread_attr,
+                   void *_Nonnull (*_Nonnull start_routine)(void *_Nonnull),
+                   void *_Nullable input);
 
 #define LOG(fmt, ...) fprintf(stderr, "[LOG]: " fmt "\n", ##__VA_ARGS__)
 #define LOG_ERROR(msg, ...)                                                    \

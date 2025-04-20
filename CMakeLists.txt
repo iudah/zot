@@ -12,21 +12,31 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(C_WARNINGS "-Wall -Wextra -Wshadow -Wformat=2 -Wunused")
 
 # Set flags for Debug and Release configurations
-set(CMAKE_C_FLAGS_DEBUG     "${CMAKE_C_FLAGS_DEBUG} -ggdb3 -O0 -fno-omit-frame-pointer -fsanitize=address")
-set(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE} -O3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb3 -O0 -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 
 set(HEADER_FILES include/zot.h)
 set(SOURCE_FILES src/zot.c)
 
 include(ExternalProject)
 
-ExternalProject_Add(
-  MemAlloc
-  SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/memalloc -BUILD_EXE=OFF
-  BUILD_ALWAYS TRUE
-  BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/memalloc/lib/libmemalloc.a
-)
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/memalloc/lib/cmake/memalloc")
+message(STATUS "memalloc will search in ${CMAKE_PREFIX_PATH}")
+find_package(memalloc QUIET)
+if(NOT memalloc_FOUND)
+  ExternalProject_Add(
+    MemAlloc
+    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
+    INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXEC=OFF
+    BUILD_ALWAYS OFF
+    STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+  )
+else()
+  message(STATUS "memalloc was found in ${CMAKE_PREFIX_PATH}")
+endif()
+message(STATUS "memalloc was found: ${memalloc_FOUND}")
+
 
 # Create INTERFACE target for shared flags
 add_library(zot_c_flags INTERFACE)
@@ -34,17 +44,24 @@ target_compile_features(zot_c_flags INTERFACE c_std_17)
 target_compile_options(
   zot_c_flags
   INTERFACE
-    "$<BUILD_INTERFACE:${C_WARNINGS}>"
+  "$<BUILD_INTERFACE:${C_WARNINGS}>"
 )
 
 # Main library setup
-add_library(${TARGET} SHARED)
+add_library(${TARGET} STATIC)
 target_sources(${TARGET} PRIVATE ${SOURCE_FILES})
-target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/memalloc/include)
-target_link_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/lib/)
-target_link_libraries(${TARGET} PRIVATE memalloc)
-add_dependencies(${TARGET} MemAlloc)
+target_include_directories(${TARGET} PRIVATE include)
+target_link_libraries(${TARGET} PUBLIC memalloc)
+if(NOT memalloc_FOUND)
+  target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/include)
+  add_dependencies(${TARGET} MemAlloc)
+endif()
+
 
 # Install targets
-install(TARGETS ${TARGET} DESTINATION lib)
+install(TARGETS ${TARGET} EXPORT ZotTargets LIBRARY DESTINATION lib INCLUDES DESTINATION include)
 install(FILES ${HEADER_FILES} DESTINATION include)
+install(EXPORT ZotTargets FILE zot-config.cmake DESTINATION lib/cmake/zot)
+
+# Install beacon
+export(EXPORT ZotTargets FILE "${CMAKE_BINARY_DIR}/zot-config.cmake")

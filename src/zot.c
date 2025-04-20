@@ -31,4 +31,11 @@ void zfree(void *ptr) {
   return claim(ptr);
 }
 
+int zthread_create(pthread_t *_Nonnull thread_ptr,
+                   pthread_attr_t const *_Nullable thread_attr,
+                   void *_Nonnull (*_Nonnull start_routine)(void *_Nonnull),
+                   void *_Nullable input) {
+  return create_thread(thread_ptr, thread_attr, start_routine, input);
+}
+
 static void __attribute__((constructor(100))) on_load() {}
