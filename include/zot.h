@@ -1,6 +1,11 @@
 #ifndef ZOT_H
 #define ZOT_H
 
+#ifndef __clang__
+#define _Nonnull
+#define _Nullable
+#endif
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
