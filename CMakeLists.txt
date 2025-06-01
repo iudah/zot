@@ -26,11 +26,14 @@ find_package(memalloc QUIET)
 if(NOT memalloc_FOUND)
   ExternalProject_Add(
     MemAlloc
-    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
+    GIT_REPOSITORY  "https://github.com/iudah/memalloc.git"
+    GIT_TAG 79e9651
+#    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXEC=OFF
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
+    UPDATE_DISCONNECTED TRUE
   )
 else()
   message(STATUS "memalloc was found in ${CMAKE_PREFIX_PATH}")
