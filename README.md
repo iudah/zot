@@ -22,8 +22,8 @@ Clone and build with CMake:
 ```bash
 git clone https://github.com/iudah/zot.git
 cd zot
-cmake .
-make
+cmake -B ./build -S .
+cmake --build ./build
 ```
 
 ## Feedback
