@@ -1,5 +1,6 @@
 #include <mem.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zot.h>
 
 typedef uint64_t zsize;
@@ -18,7 +19,15 @@ void *zcalloc(const zsize count, const zsize unit_size) {
   void *ptr = zmalloc(size);
   if (!ptr)
     return NULL;
-  memset(ptr, 0, size);
+  // Paginate loop because a single memset triggers UBSan on Android
+  uintptr_t mem = (uintptr_t)ptr;
+#define MEMSET_LIMIT 65535
+  uint32_t page = 0;
+  for (; (page + MEMSET_LIMIT) < size; page += MEMSET_LIMIT) {
+    memset((void *)(mem + page), 0, MEMSET_LIMIT);
+  }
+  memset((void *)(mem + page), 0, size - MEMSET_LIMIT);
+
   return ptr;
 }
 void *zrealloc(void *ptr, const zsize size) {
@@ -38,4 +47,4 @@ int zthread_create(pthread_t *_Nonnull thread_ptr,
   return create_thread(thread_ptr, thread_attr, start_routine, input);
 }
 
-static void __attribute__((constructor(100))) on_load() {}
+static void __attribute__((constructor(102))) on_load() {}
