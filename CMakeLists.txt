@@ -1,70 +1,96 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(Zot VERSION 2.1 DESCRIPTION "zot memory manager")
+project(Zot VERSION 2.1.1 DESCRIPTION "zot memory manager" LANGUAGES C)
 
 set(TARGET zot)
 
-# Set C standard
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Define compiler warnings in one place
-set(C_WARNINGS "-Wall -Wextra -Wshadow -Wformat=2 -Wunused")
+option(BUILD_EXECUTABLE "Build test executable " ON)
+option(ENABLE_SANITIZERS "Enable Address and Undefined Behaviours Sanitizers" OFF)
 
-# Set flags for Debug and Release configurations
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb3 -O0 -fno-omit-frame-pointer -fsanitize=address")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-
-set(HEADER_FILES include/zot.h)
-set(SOURCE_FILES src/zot.c)
+message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
+message(STATUS "System Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
 include(ExternalProject)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/memalloc/lib/cmake/memalloc")
-message(STATUS "memalloc will search in ${CMAKE_PREFIX_PATH}")
+
 find_package(memalloc QUIET)
 if(NOT memalloc_FOUND)
+  message(STATUS "memalloc not found, adding as ExternalProject")
   ExternalProject_Add(
     MemAlloc
-    GIT_REPOSITORY  "https://github.com/iudah/memalloc.git"
-#    GIT_TAG ca07f5997554b19c50523f6ff11cb1665fa897df
-#    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
+    GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXEC=OFF
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
     BUILD_ALWAYS OFF
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
   )
-else()
-  message(STATUS "memalloc was found in ${CMAKE_PREFIX_PATH}")
 endif()
-message(STATUS "memalloc was found: ${memalloc_FOUND}")
 
 
-# Create INTERFACE target for shared flags
-add_library(zot_c_flags INTERFACE)
-target_compile_features(zot_c_flags INTERFACE c_std_17)
-target_compile_options(
-  zot_c_flags
-  INTERFACE
-  "$<BUILD_INTERFACE:${C_WARNINGS}>"
+set(HEADER_FILES include/zot.h)
+set(SOURCE_FILES src/zot.c)
+
+add_library(${TARGET} STATIC ${SOURCE_FILES})
+add_library(zot::${TARGET} ALIAS ${TARGET})
+
+target_include_directories(${TARGET}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
-# Main library setup
-add_library(${TARGET} STATIC)
-target_sources(${TARGET} PRIVATE ${SOURCE_FILES})
-target_include_directories(${TARGET} PRIVATE include)
-target_link_libraries(${TARGET} PUBLIC memalloc)
-if(NOT memalloc_FOUND)
+if(memalloc_FOUND)
+  target_link_libraries(${TARGET} PUBLIC memalloc)
+else()
   target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/include)
   add_dependencies(${TARGET} MemAlloc)
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  if(MSVC)
+    target_compile_options(${TARGET} PRIVATE /Zi /Od /RTC1)
+    target_link_options(${TARGET} PRIVATE /DEBUG)
+  else()
+    target_compile_options(${TARGET} PRIVATE -g -O0 -fno-omit-frame-pointer)
+  endif()
+  if(ENABLE_SANITIZERS AND NOT MSVC)
+    target_compile_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)
+    target_link_options(${TARGET} PRIVATE -fsanitize=address -fsanitize=undefined)
+  endif()
+endif()
 
-# Install targets
-install(TARGETS ${TARGET} EXPORT ZotTargets LIBRARY DESTINATION lib INCLUDES DESTINATION include)
-install(FILES ${HEADER_FILES} DESTINATION include)
-install(EXPORT ZotTargets FILE zot-config.cmake DESTINATION lib/cmake/zot)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND NOT MSVC)
+  include(CheckCCompilerFlag)
+  check_c_compiler_flag("-mfpu=neon" HAS_NEON_FLAG)
+  if(HAS_NEON_FLAG)
+    target_compile_options(${TARGET} PRIVATE -mfpu=neon)
+  endif()
+endif()
 
-# Install beacon
-export(EXPORT ZotTargets FILE "${CMAKE_BINARY_DIR}/zot-config.cmake")
+# if(BUILD_EXECUTABLE)
+#   add_executable(${TARGET}_exe main.c)
+#   target_link_libraries(${TARGET}_exe PRIVATE ${TARGET})
+#   target_include_directories(${TARGET}_exe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# endif()
+
+include(GNUInstallDirs)
+
+install(TARGETS ${TARGET}
+  EXPORT ZotTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(FILES ${HEADER_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT ZotTargets
+  FILE zot-config.cmake
+  NAMESPACE zot::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/zot)
+
+export(EXPORT ZotTargets
+  FILE "${CMAKE_BINARY_DIR}/zot-config.cmake")

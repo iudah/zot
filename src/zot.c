@@ -26,7 +26,7 @@ void *zrealloc(void *ptr, const zsize size) {
   return reallocate(ptr, size);
 }
 
-void zfree(void *ptr) {
+bool zfree(void *ptr) {
   // return free(ptr);
   return claim(ptr);
 }

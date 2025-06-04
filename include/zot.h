@@ -35,7 +35,7 @@ void *_Nullable zrealloc(void *_Nonnull mptr, zsize size);
  * Frees allocated memory.
  * @param ptr Pointer to the memory to be freed.
  */
-void zfree(void *_Nonnull ptr);
+bool zfree(void *_Nonnull ptr);
 
 int zthread_create(pthread_t *_Nonnull thread_ptr,
                    pthread_attr_t const *_Nullable thread_attr,
