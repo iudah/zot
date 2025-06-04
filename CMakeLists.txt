@@ -27,7 +27,7 @@ if(NOT memalloc_FOUND)
   ExternalProject_Add(
     MemAlloc
     GIT_REPOSITORY  "https://github.com/iudah/memalloc.git"
-    GIT_TAG 79e9651
+#    GIT_TAG ca07f5997554b19c50523f6ff11cb1665fa897df
 #    SOURCE_DIR /sdcard/Jay/Projects/xab_laud_ubject/memalloc/
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXEC=OFF
