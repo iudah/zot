@@ -47,7 +47,16 @@ target_include_directories(${TARGET}
 )
 
 if(memalloc_FOUND)
-  target_link_libraries(${TARGET} PUBLIC memalloc)
+  if(NOT TARGET memalloc::memalloc)
+    add_library(memalloc_imported IMPORTED)
+    add_dependencies(memalloc_imported MemAlloc)
+    set_target_properties(memalloc_imported PROPERTIES
+      IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+      INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include"
+    )
+    add_library(memalloc::memalloc ALIAS memalloc_imported)
+  endif()
+  target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 else()
   target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/include)
   add_dependencies(${TARGET} MemAlloc)
