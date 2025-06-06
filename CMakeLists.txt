@@ -23,6 +23,8 @@ if(NOT memalloc_FOUND)
   ExternalProject_Add(
     MemAlloc
     GIT_REPOSITORY "https://github.com/iudah/memalloc.git"
+    GIT_TAG origin/main
+    GIT_SHALLOW TRUE
     INSTALL_DIR ${CMAKE_BINARY_DIR}/memalloc
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DBUILD_EXECUTABLE=OFF
     BUILD_ALWAYS OFF
