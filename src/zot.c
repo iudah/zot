@@ -47,4 +47,11 @@ int zthread_create(pthread_t *_Nonnull thread_ptr,
   return create_thread(thread_ptr, thread_attr, start_routine, input);
 }
 
+char *zstrdup(const char *s) {
+  uint32_t s_length = strlen(s) + 1;
+  char *str = zmalloc(s_length);
+  memcpy(str, s, s_length);
+  return str;
+}
+
 static void __attribute__((constructor(102))) on_load() {}

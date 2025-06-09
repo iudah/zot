@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(Zot VERSION 2.1.1 DESCRIPTION "zot memory manager" LANGUAGES C)
+project(Zot VERSION 2.1.2 DESCRIPTION "zot memory manager" LANGUAGES C)
 
 set(TARGET zot)
 
@@ -18,7 +18,7 @@ include(ExternalProject)
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/memalloc/lib/cmake/memalloc")
 
 find_package(memalloc QUIET)
-if(NOT memalloc_FOUND)
+if(NOT TARGET memalloc::memalloc)
   message(STATUS "memalloc not found, adding as ExternalProject")
   ExternalProject_Add(
     MemAlloc
@@ -31,6 +31,14 @@ if(NOT memalloc_FOUND)
     STAMP_DIR ${CMAKE_BINARY_DIR}/stamps
     UPDATE_DISCONNECTED TRUE
   )
+
+  add_library(memalloc_imported IMPORTED)
+  add_dependencies(memalloc_imported MemAlloc)
+  set_target_properties(memalloc_imported PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include"
+  )
+  add_library(memalloc::memalloc ALIAS memalloc_imported)
 endif()
 
 
@@ -45,22 +53,7 @@ target_include_directories(${TARGET}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-
-if(memalloc_FOUND)
-  if(NOT TARGET memalloc::memalloc)
-    add_library(memalloc_imported IMPORTED)
-    add_dependencies(memalloc_imported MemAlloc)
-    set_target_properties(memalloc_imported PROPERTIES
-      IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/memalloc/lib/${CMAKE_STATIC_LIBRARY_PREFIX}memalloc${CMAKE_STATIC_LIBRARY_SUFFIX}"
-      INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/memalloc/include"
-    )
-    add_library(memalloc::memalloc ALIAS memalloc_imported)
-  endif()
-  target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
-else()
-  target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/memalloc/include)
-  add_dependencies(${TARGET} MemAlloc)
-endif()
+target_link_libraries(${TARGET} PUBLIC memalloc::memalloc)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   if(MSVC)
