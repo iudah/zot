@@ -26,10 +26,11 @@ void *zcalloc(const zsize count, const zsize unit_size) {
   for (; (page + MEMSET_LIMIT) < size; page += MEMSET_LIMIT) {
     memset((void *)(mem + page), 0, MEMSET_LIMIT);
   }
-  memset((void *)(mem + page), 0, size - MEMSET_LIMIT);
+  memset((void *)(mem + page), 0, size - page);
 
   return ptr;
 }
+
 void *zrealloc(void *ptr, const zsize size) {
   // return realloc(ptr, size);
   return reallocate(ptr, size);
